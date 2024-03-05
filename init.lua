@@ -99,7 +99,7 @@ vim.g.maplocalleader = ' '
 vim.opt.number = true
 -- You can also add relative line numbers, for help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.opt.relativenumber = true
+vim.opt.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.opt.mouse = 'a'
@@ -147,6 +147,17 @@ vim.opt.cursorline = true
 
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 10
+
+-- my settings
+vim.opt.scrolloff = 8
+vim.opt.sidescrolloff = 15
+vim.opt.sidescroll = 1
+vim.opt.foldmethod = 'expr'
+vim.opt.foldlevel = 2
+vim.opt.foldexpr = 'nvim_treesitter#foldexpr()'
+vim.opt.smartindent = true
+
+vim.opt.magic = true
 
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
@@ -220,7 +231,8 @@ vim.opt.rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup {
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
-  'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
+
+  -- see custom/plugins
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -251,7 +263,6 @@ require('lazy').setup {
       },
     },
   },
-
   -- NOTE: Plugins can also be configured to run lua code when they are loaded.
   --
   -- This is often very useful to both group configuration, as well as handle
@@ -315,7 +326,7 @@ require('lazy').setup {
       -- Useful for getting pretty icons, but requires special font.
       --  If you already have a Nerd Font, or terminal set up with fallback fonts
       --  you can enable this
-      -- { 'nvim-tree/nvim-web-devicons' }
+      { 'nvim-tree/nvim-web-devicons' },
     },
     config = function()
       -- Telescope is a fuzzy finder that comes with a lot of different things that
@@ -349,9 +360,34 @@ require('lazy').setup {
         --   },
         -- },
         -- pickers = {}
+        defaults = {
+          file_ignore_patterns = { 'node_modules' },
+          -- path_display = { shorten = { len = 3, exclude = { -2, -1 } } },
+          path_display = { 'smart' },
+          layout_strategy = 'flex',
+          layout_config = {
+            prompt_position = 'bottom',
+            flex = {
+              flip_columns = 120,
+              horizontal = {
+                preview_width = 0.45,
+              },
+              vertical = {
+                preview_height = 0.5,
+                preview_cutoff = 5,
+              },
+            },
+          },
+        },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
+          },
+          fzf = {
+            fuzzy = true, -- false will only do exact matching
+            override_generic_sorter = true, -- override the generic sorter
+            override_file_sorter = true, -- override the file sorter
+            case_mode = 'smart_case', -- or "ignore_case" or "respect_case"
           },
         },
       }
@@ -490,6 +526,9 @@ require('lazy').setup {
           --  See `:help K` for why this keymap
           map('K', vim.lsp.buf.hover, 'Hover Documentation')
 
+          -- Format the current buffer
+          map('<leader>fo', vim.lsp.buf.format, '[F]ormat [O]verride')
+
           -- WARN: This is not Goto Definition, this is Goto Declaration.
           --  For example, in C this would take you to the header
           map('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
@@ -521,6 +560,7 @@ require('lazy').setup {
       local capabilities = vim.lsp.protocol.make_client_capabilities()
       capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
 
+      local elixirls = require 'elixir.elixirls'
       -- Enable the following language servers
       --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
       --
@@ -543,6 +583,113 @@ require('lazy').setup {
         -- But for many setups, the LSP (`tsserver`) will work just fine
         -- tsserver = {},
         --
+        texlab = {},
+        dockerls = {},
+        tsserver = {},
+        emmet_ls = {},
+        html = {},
+
+        elixirls = {
+          autostart = true,
+          capabilities = capabilities,
+          flags = {
+            debounce_text_changes = 150,
+          },
+          -- default settings, use the `settings` function to override settings
+          settings = elixirls.settings {
+            dialyzerEnabled = true,
+            fetchDeps = true,
+            enableTestLenses = true,
+            suggestSpecs = true,
+          },
+        },
+
+        tailwindcss = {
+          flags = {
+            debounce_text_changes = 150,
+          },
+          filetypes = {
+            'aspnetcorerazor',
+            'astro',
+            'astro-markdown',
+            'edge',
+            'eelixir',
+            'pug',
+            'gohtml',
+            'haml',
+            'handlebars',
+            'hbs',
+            'html',
+            'html-eex',
+            'heex',
+            'markdown',
+            'mdx',
+            'css',
+            'less',
+            'postcss',
+            'sass',
+            'scss',
+            'stylus',
+            'javascript',
+            'javascriptreact',
+            'rescript',
+            'typescript',
+            'typescriptreact',
+            'vue',
+            'svelte',
+            'elixir',
+            'surface',
+          },
+
+          init_options = {
+            userLanguages = {
+              elixir = 'phoenix-heex',
+              eruby = 'erb',
+              heex = 'phoenix-heex',
+              svelte = 'html',
+              surface = 'phoenix-heex',
+            },
+          },
+          handlers = {
+            ['tailwindcss/getConfiguration'] = function(_, _, params, _, bufnr, _)
+              vim.lsp.buf_notify(bufnr, 'tailwindcss/getConfigurationResponse', { _id = params._id })
+            end,
+          },
+          settings = {
+            includeLanguages = {
+              typescript = 'javascript',
+              typescriptreact = 'html',
+              ['html-eex'] = 'html',
+              ['phoenix-heex'] = 'html',
+              heex = 'html',
+              eelixir = 'html',
+              elixir = 'html',
+              elm = 'html',
+              erb = 'html',
+              svelte = 'html',
+              surface = 'html',
+            },
+            tailwindCSS = {
+              lint = {
+                cssConflict = 'warning',
+                invalidApply = 'error',
+                invalidConfigPath = 'error',
+                invalidScreen = 'error',
+                invalidTailwindDirective = 'error',
+                invalidVariant = 'error',
+                recommendedVariantOrder = 'warning',
+              },
+              experimental = {
+                classRegex = {
+                  [[class= "([^"]*)]],
+                  [[class: "([^"]*)]],
+                  '~H""".*class="([^"]*)".*"""',
+                },
+              },
+              validate = true,
+            },
+          },
+        },
 
         lua_ls = {
           -- cmd = {...},
@@ -645,8 +792,13 @@ require('lazy').setup {
       -- Adds other completion capabilities.
       --  nvim-cmp does not ship with all sources by default. They are split
       --  into multiple repos for maintenance purposes.
+      'rafamadriz/friendly-snippets',
+      'honza/vim-snippets',
+      'hrsh7th/nvim-cmp',
       'hrsh7th/cmp-nvim-lsp',
+      'hrsh7th/cmp-buffer',
       'hrsh7th/cmp-path',
+      'hrsh7th/cmp-cmdline',
 
       -- If you want to add a bunch of pre-configured snippets,
       --    you can use this plugin to help you. It even has snippets
@@ -655,9 +807,25 @@ require('lazy').setup {
       -- 'rafamadriz/friendly-snippets',
     },
     config = function()
+      local blackOrWhiteFg = function(r, g, b)
+        return ((r * 0.299 + g * 0.587 + b * 0.114) > 186) and '#000000' or '#ffffff'
+      end
+
+      local function my_comparator(kind)
+        return function(item1, item2)
+          if item2:get_kind() == kind then
+            return false
+          end
+
+          if item1:get_kind() == kind then
+            return true
+          end
+        end
+      end
       -- See `:help cmp`
       local cmp = require 'cmp'
       local luasnip = require 'luasnip'
+      local types = require 'cmp.types'
       luasnip.config.setup {}
 
       cmp.setup {
@@ -672,6 +840,74 @@ require('lazy').setup {
         -- chosen, you will need to read `:help ins-completion`
         --
         -- No, but seriously. Please read `:help ins-completion`, it is really good!
+        window = {
+          completion = cmp.config.window.bordered(),
+          documentation = cmp.config.window.bordered(),
+        },
+        sorting = {
+          comparators = {
+            cmp.config.compare.recently_used,
+            my_comparator(types.lsp.CompletionItemKind.Snippet),
+            my_comparator(types.lsp.CompletionItemKind.Interface),
+            my_comparator(types.lsp.CompletionItemKind.Function),
+            my_comparator(types.lsp.CompletionItemKind.buffer),
+          },
+        },
+        formatting = {
+          fields = { 'menu', 'abbr', 'kind' },
+          format = function(entry, item)
+            local kind_icons = {
+              Text = '',
+              Method = 'm',
+              Function = '',
+              Constructor = '',
+              Field = '',
+              Variable = '',
+              Class = '',
+              Interface = '',
+              Module = '',
+              Property = '',
+              Unit = '',
+              Value = '',
+              Enum = '',
+              Keyword = '',
+              Snippet = '',
+              Color = '',
+              File = '',
+              Reference = '',
+              Folder = '',
+              EnumMember = '',
+              Constant = '',
+              Struct = '',
+              Event = '',
+              Operator = '',
+              TypeParameter = '',
+            }
+            local menu_icon = {
+              nvim_lsp = 'lsp  ',
+              nvim_lua = 'lua  ',
+              luasnip = 'snippet ⋗ ',
+              buffer = 'buffer  ',
+              path = 'path  ',
+            }
+            item.menu = menu_icon[entry.source.name]
+            if item.kind == 'Color' and entry.completion_item.documentation then
+              local _, _, r, g, b = string.find(entry.completion_item.documentation, '^rgb%((%d+), (%d+), (%d+)')
+              if r then
+                local color = string.format('%02x', r) .. string.format('%02x', g) .. string.format('%02x', b)
+                local group = 'Tw_' .. color
+                if vim.fn.hlID(group) < 1 then
+                  vim.api.nvim_set_hl(0, group, { fg = blackOrWhiteFg(r, g, b), bg = '#' .. color })
+                end
+                item.kind = ' ' .. kind_icons[item.kind] .. ' '
+                item.kind_hl_group = group
+                return item
+              end
+            end
+            item.kind = string.format('%s', kind_icons[item.kind]) .. ' ' .. item.kind
+            return item
+          end,
+        },
         mapping = cmp.mapping.preset.insert {
           -- Select the [n]ext item
           ['<C-n>'] = cmp.mapping.select_next_item(),
@@ -709,7 +945,9 @@ require('lazy').setup {
         },
         sources = {
           { name = 'nvim_lsp' },
+          { name = 'nvim_lua' },
           { name = 'luasnip' },
+          { name = 'buffer' },
           { name = 'path' },
         },
       }
@@ -732,7 +970,14 @@ require('lazy').setup {
       vim.cmd.hi 'Comment gui=none'
     end,
   },
-
+  { 'rayes0/blossom.vim' },
+  { 'sainnhe/gruvbox-material' },
+  { 'ryanoasis/vim-devicons' },
+  { 'NLKNguyen/papercolor-theme' },
+  { 'norcalli/nvim-colorizer.lua' },
+  { 'yorickpeterse/vim-paper' },
+  { 'Shatur/neovim-ayu' },
+  { 'kyazdani42/nvim-web-devicons' },
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
 
@@ -814,7 +1059,7 @@ require('lazy').setup {
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   --    For additional information, see `:help lazy.nvim-lazy.nvim-structuring-your-plugins`
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
 }
 
 -- The line beneath this is called `modeline`. See `:help modeline`
